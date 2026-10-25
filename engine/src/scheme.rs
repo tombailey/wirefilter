@@ -1032,11 +1032,11 @@ macro_rules! Scheme {
         $crate::SchemeBuilder::from_iter([$(
             (
                 concat!(stringify!($ns) $(, ".", stringify!($field))*),
-                Scheme!($ty $(($subty $($rest)*))?),
+                $crate::Scheme!($ty $(($subty $($rest)*))?),
             )
         ),*])
     };
-    ($ty:ident $(($subty:tt $($rest:tt)*))?) => {$crate::Type::$ty$(((Scheme!($subty $($rest)*)).into()))?};
+    ($ty:ident $(($subty:tt $($rest:tt)*))?) => {$crate::Type::$ty$((($crate::Scheme!($subty $($rest)*)).into()))?};
 }
 
 #[test]
