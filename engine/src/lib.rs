@@ -77,7 +77,11 @@ mod range_set;
 mod rhs_types;
 mod searcher;
 mod strict_partial_ord;
+mod typed_scheme;
 mod types;
+
+#[doc(hidden)]
+pub use self::typed_scheme::{TypedSchemeDefinition, typed_field_name};
 
 pub use self::ast::field_expr::{
     ComparisonExpr, ComparisonOpExpr, ComparisonRhs, IdentifierExpr, IntOp, IntRhs, OrderingOp,

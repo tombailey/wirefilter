@@ -12,16 +12,26 @@ an executable IR and, finally, executing filters against provided values.
 ## Example
 
 ```rust
-use wirefilter::{ExecutionContext, Scheme};
+use wirefilter::{ExecutionContext, TypedScheme};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a map of possible filter fields.
-    let scheme = Scheme! {
-        http.method: Bytes,
-        http.ua: Bytes,
+TypedScheme! {
+    struct Http => HttpFields {
+        method: Bytes,
+        ua: Bytes,
+    }
+}
+
+TypedScheme! {
+    struct Request => RequestFields {
+        http: namespace(Http),
         port: Int,
     }
-    .build();
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a scheme with statically known field names.
+    let scheme = Request::new();
+    let fields = scheme.get_fields();
 
     // Parse a Wireshark-like expression into an AST.
     let ast = scheme.parse(
@@ -40,26 +50,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set runtime field values to test the filter against.
     let mut ctx = ExecutionContext::new(&scheme);
 
-    ctx.set_field_value(scheme.get_field("http.method").unwrap(), "GET")?;
+    ctx.set_field_value(fields.http.method, "GET")?;
 
     ctx.set_field_value(
-        scheme.get_field("http.ua").unwrap(),
+        fields.http.ua,
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0",
     )?;
 
-    ctx.set_field_value(scheme.get_field("port").unwrap(), 443)?;
+    ctx.set_field_value(fields.port, 443)?;
 
     // Execute the filter with given runtime values.
     println!("Filter matches: {:?}", filter.execute(&ctx)?); // true
 
     // Amend one of the runtime values and execute the filter again.
-    ctx.set_field_value(scheme.get_field("port").unwrap(), 8080)?;
+    ctx.set_field_value(fields.port, 8080)?;
 
     println!("Filter matches: {:?}", filter.execute(&ctx)?); // false
 
     Ok(())
 }
 ```
+
+Generated field members are checked by Rust: a typo such as
+`fields.http.methd` fails to compile. Assigned value types
+are still checked at runtime by `set_field_value`.
 
 ## Fuzzing
 
